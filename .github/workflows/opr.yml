@@ -118,19 +118,28 @@ jobs:
         id: get_interface_version_num
         if: ${{ env.MY_FILENAME == 'undefined' || env.MY_FILENAME != env.CURSE_FILENAME }}
         run: |
-          cd Opie/
-          echo "get_interface_version_num=$(cat *.toc | sed -n -E -e 's/^## Interface: ([0-9]+).*/\1/p')" >> "$GITHUB_OUTPUT"
+          if [ -d "Opie/" ]; then
+            cd Opie/
+            interface_version=$(cat *.toc | sed -n -E -e 's/^## Interface: ([0-9]+).*/\1/p')
+            echo "get_interface_version_num=${interface_version}" >> "$GITHUB_OUTPUT"
+          else
+            echo "get_interface_version_num=undefined" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Update release.json
         if: ${{ env.MY_FILENAME == 'undefined' || env.MY_FILENAME != env.CURSE_FILENAME }}
         env:
           NEW_INTERFACE: ${{ steps.get_interface_version_num.outputs.get_interface_version_num }}
         run: |
-          FULLFILE_NAME="${CURSE_FILENAME}.zip"
-          temp="$(\
-            jq --arg FILENAME "$FULLFILE_NAME" --argjson INTERFACE "$NEW_INTERFACE" \
-            '.releases[0].filename |= $FILENAME | .releases[0].metadata[0].interface |= $INTERFACE' release.json)" \
-            && echo "${temp}" > release.json
+          if [ "$NEW_INTERFACE" != "undefined" ]; then
+            FULLFILE_NAME="${CURSE_FILENAME}.zip"
+            temp="$(\
+              jq --arg FILENAME "$FULLFILE_NAME" --argjson INTERFACE "$NEW_INTERFACE" \
+              '.releases[0].filename |= $FILENAME | .releases[0].metadata[0].interface |= $INTERFACE' release.json)" \
+              && echo "${temp}" > release.json
+          else
+            echo "No new interface version found; skipping release.json update."
+          fi
 
       - name: Make Tag
         if: ${{ env.MY_FILENAME == 'undefined' || env.MY_FILENAME != env.CURSE_FILENAME }}
