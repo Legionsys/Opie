@@ -118,7 +118,7 @@ jobs:
         id: get_interface_version_num
         if: ${{ env.MY_FILENAME == 'undefined' || env.MY_FILENAME != env.CURSE_FILENAME }}
         run: |
-          cd Leatrix_Plus/
+          cd Opie/
           echo "get_interface_version_num=$(cat *.toc | sed -n -E -e 's/^## Interface: ([0-9]+).*/\1/p')" >> "$GITHUB_OUTPUT"
 
       - name: Update release.json
